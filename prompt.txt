@@ -1,0 +1,22 @@
+I want you to create the following react native app : 
+app name : BSD Slide Creator
+Functionality : It is a web application to create a 1920x1080 resolution poster for a weekly event called BSD in out organisation. 
+Features : 
+1. Theme selector : a dropdown with the theme names - liquid glass (same as apple), frosted glass, pebble
+	1.1. Add colour selector with which will set the tint of the theme.
+2. Background color. 
+	2.1 Add a controller for background colour selection
+3. Customisable image layer over background	3.1 Add a field for adding background image 
+	3.2 Add a opaque controller 
+	3.3 Add a blur controller for controlling the blur.
+	3.3 Add controller for stretch to fit / fit to scale / custom stretching
+	3.4 Add a scrim controller to control the contrast of the background image
+4. A team member section for adding team members in the poster - Add number of team members from dropdown ranging from 1-20
+    4.1 based on the number of team members, create tiles maintaining the same theme selected in the first section.
+        4.1.1 the tiles should have 3 inputs - image, name, role 
+        4.1.2 the image tile should be customisable with - round / square with rounded edge / square with sharp edge
+5. Section for tech stack 
+	5.1 add number of tech stack ranging from 1-20 
+        5.1.1 based on selection of count create a rounded ended bar at the bottom of the screen (should look as if sitting on the poster) of the same theme as that selected in the theme selector.
+        5.1.2 the tech stack bar should contain section based on the count and have 2 inputs : image and tech name
+6. A top section for header which will have the team name, it will be an input field and use H1 heading and custom font selector. Also, add a logo slot
