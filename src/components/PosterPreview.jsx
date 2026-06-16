@@ -29,6 +29,21 @@ export default function PosterPreview({ config, scale = 1 }) {
     config.memberInPanel
   )
 
+  // Fixed tile width so the flex grid wraps at exactly `cols` per row and the
+  // last (partial) row can be centered. Width tracks the avatar plus any panel
+  // padding, with a little slack for the name/role labels.
+  const memberTileW =
+    memberLayout.avatar +
+    (config.memberInPanel ? memberLayout.panelPad * 2 : 0) +
+    18
+  const memberRowW =
+    memberLayout.cols * memberTileW + (memberLayout.cols - 1) * memberLayout.gap
+
+  // Centralised member-tile typography: one font + name size drives every tile.
+  const memberFont = config.memberFont || "'Inter', sans-serif"
+  const memberNameFont = config.memberFontSize ?? memberLayout.nameFont
+  const memberRoleFont = Math.round(memberNameFont * 0.78)
+
   const techBarHeight = config.techBarHeight ?? 130
 
   const headerShadow = config.headerShadow ?? 30
@@ -216,7 +231,7 @@ export default function PosterPreview({ config, scale = 1 }) {
             <div
               className="member-grid"
               style={{
-                gridTemplateColumns: `repeat(${memberLayout.cols}, auto)`,
+                width: memberRowW + 'px',
                 gap: memberLayout.gap + 'px',
               }}
             >
@@ -226,14 +241,16 @@ export default function PosterPreview({ config, scale = 1 }) {
                   className={`member-tile${
                     config.memberInPanel ? ` member-tile-panel ${surfaceClass}` : ''
                   }`}
-                  style={
-                    config.memberInPanel
+                  style={{
+                    width: memberTileW + 'px',
+                    fontFamily: memberFont,
+                    ...(config.memberInPanel
                       ? {
                           padding: `${memberLayout.panelPad}px ${memberLayout.panelPad * 0.9}px`,
                           ...surfaceVars(themeDrop),
                         }
-                      : undefined
-                  }
+                      : {}),
+                  }}
                 >
                   <div
                     className={`member-image ${member.shape} ${surfaceClass}`}
@@ -262,11 +279,11 @@ export default function PosterPreview({ config, scale = 1 }) {
                     className="member-info"
                     style={{ marginTop: memberLayout.infoGap + 'px' }}
                   >
-                    <div className="name" style={{ fontSize: memberLayout.nameFont + 'px' }}>
+                    <div className="name" style={{ fontSize: memberNameFont + 'px' }}>
                       {member.name || 'Name'}
                     </div>
                     {member.role && (
-                      <div className="role" style={{ fontSize: memberLayout.roleFont + 'px' }}>
+                      <div className="role" style={{ fontSize: memberRoleFont + 'px' }}>
                         {member.role}
                       </div>
                     )}
@@ -335,19 +352,19 @@ function computeMemberLayout(count, w, h, inPanel) {
   const W = Math.max(0, w - 100)
   const H = Math.max(0, h - 36)
   const heightFactor = inPanel ? 1.85 : 1.4 // tile height ≈ avatar * factor (label + padding)
-  let best = null
-  for (let cols = 1; cols <= count; cols++) {
-    const rows = Math.ceil(count / cols)
-    const gap = Math.max(12, Math.min(30, W * 0.018))
-    const cellW = (W - gap * (cols - 1)) / cols
-    const cellH = (H - gap * (rows - 1)) / rows
-    if (cellW <= 0 || cellH <= 0) continue
-    const avatar = Math.min(cellW * 0.92, cellH / heightFactor)
-    if (!best || avatar > best.avatar) best = { cols, rows, gap, avatar }
-  }
-  if (!best) {
-    const cols = Math.min(count, Math.max(1, Math.ceil(Math.sqrt(count))))
-    best = { cols, gap: 16, avatar: 60 }
+  // Fixed column pattern driven by member count so rows stay balanced
+  // regardless of how wide the screen is:
+  //   1-5  -> 5×1   6-10 -> 5×2   11-15 -> 5×3   16-20 -> 10×2
+  const cols =
+    count <= 5 ? count : count <= 15 ? 5 : 10
+  const rows = Math.ceil(count / cols)
+  const gap = Math.max(12, Math.min(30, W * 0.018))
+  const cellW = (W - gap * (cols - 1)) / cols
+  const cellH = (H - gap * (rows - 1)) / rows
+  const best = {
+    cols,
+    gap,
+    avatar: cellW > 0 && cellH > 0 ? Math.min(cellW * 0.92, cellH / heightFactor) : 60,
   }
   const avatar = Math.max(34, Math.min(best.avatar, 210))
   return {

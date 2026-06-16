@@ -32,6 +32,8 @@ export default function App() {
     logoSize: 96,
     teamMembersCount: 3,
     memberShadow: 28,
+    memberFont: "'Inter', sans-serif",
+    memberFontSize: 28,
     teamMembers: [
       { id: 1, image: null, name: 'Member 1', role: 'Role 1', shape: 'round' },
       { id: 2, image: null, name: 'Member 2', role: 'Role 2', shape: 'round' },

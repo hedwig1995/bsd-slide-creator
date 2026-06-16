@@ -1,5 +1,20 @@
 import { useState } from 'react'
 import '../styles/ControlPanel.css'
+import ImageCropper from './ImageCropper'
+
+// Shared font list used by both the headline and the team-member tiles.
+const FONT_OPTIONS = [
+  { value: "'Bricolage Grotesque', sans-serif", label: 'Bricolage Grotesque' },
+  { value: "'Space Grotesk', sans-serif", label: 'Space Grotesk' },
+  { value: "'Poppins', sans-serif", label: 'Poppins' },
+  { value: "'Outfit', sans-serif", label: 'Outfit' },
+  { value: "'Sora', sans-serif", label: 'Sora' },
+  { value: "'Plus Jakarta Sans', sans-serif", label: 'Plus Jakarta Sans' },
+  { value: "'Manrope', sans-serif", label: 'Manrope' },
+  { value: "'Montserrat', sans-serif", label: 'Montserrat' },
+  { value: "'Archivo', sans-serif", label: 'Archivo' },
+  { value: "'Inter', sans-serif", label: 'Inter' },
+]
 
 const SECTION_DEFAULTS = {
   theme: {
@@ -37,6 +52,8 @@ const SECTION_DEFAULTS = {
   members: {
     teamMembersCount: 3,
     memberShadow: 28,
+    memberFont: "'Inter', sans-serif",
+    memberFontSize: 28,
     teamMembers: [
       { id: 1, image: null, name: 'Member 1', role: 'Role 1', shape: 'round' },
       { id: 2, image: null, name: 'Member 2', role: 'Role 2', shape: 'round' },
@@ -63,6 +80,9 @@ export default function ControlPanel({ config, setConfig }) {
     3: true, // Team members
     4: false, // Tech stack
   })
+
+  // When set, opens the crop modal for the given member's freshly picked photo.
+  const [crop, setCrop] = useState(null) // { memberId, src, shape } | null
 
   const toggleSection = (num) => {
     setOpenSections(prev => ({
@@ -154,6 +174,14 @@ export default function ControlPanel({ config, setConfig }) {
     setConfig(prev => ({ ...prev, memberShadow: parseInt(e.target.value) }))
   }
 
+  const handleMemberFontChange = (e) => {
+    setConfig(prev => ({ ...prev, memberFont: e.target.value }))
+  }
+
+  const handleMemberFontSizeChange = (e) => {
+    setConfig(prev => ({ ...prev, memberFontSize: parseInt(e.target.value) }))
+  }
+
   const handleHeaderAlignChange = (align) => {
     setConfig(prev => ({ ...prev, headerAlign: align }))
   }
@@ -228,14 +256,18 @@ export default function ControlPanel({ config, setConfig }) {
     }))
   }
 
-  const handleMemberImageChange = (memberId, file) => {
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        handleMemberChange(memberId, 'image', event.target.result)
-      }
-      reader.readAsDataURL(file)
+  const handleMemberImageChange = (memberId, file, shape) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      setCrop({ memberId, src: event.target.result, shape })
     }
+    reader.readAsDataURL(file)
+  }
+
+  const handleCropSave = (dataUrl) => {
+    if (crop) handleMemberChange(crop.memberId, 'image', dataUrl)
+    setCrop(null)
   }
 
   const handleTechStackCountChange = (e) => {
@@ -452,16 +484,11 @@ export default function ControlPanel({ config, setConfig }) {
           <div className="control-group">
             <label>Title font</label>
             <select value={config.headerFont} onChange={handleHeaderFontChange}>
-              <option value="'Bricolage Grotesque', sans-serif">Bricolage Grotesque</option>
-              <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
-              <option value="'Poppins', sans-serif">Poppins</option>
-              <option value="'Outfit', sans-serif">Outfit</option>
-              <option value="'Sora', sans-serif">Sora</option>
-              <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-              <option value="'Manrope', sans-serif">Manrope</option>
-              <option value="'Montserrat', sans-serif">Montserrat</option>
-              <option value="'Archivo', sans-serif">Archivo</option>
-              <option value="'Inter', sans-serif">Inter</option>
+              {FONT_OPTIONS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -662,6 +689,29 @@ export default function ControlPanel({ config, setConfig }) {
             </select>
           </div>
 
+          <div className="control-group">
+            <label>Tile font</label>
+            <select value={config.memberFont} onChange={handleMemberFontChange}>
+              {FONT_OPTIONS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="control-group">
+            <label>Tile name size: {config.memberFontSize}px</label>
+            <input
+              type="range"
+              min="12"
+              max="45"
+              step="1"
+              value={config.memberFontSize}
+              onChange={handleMemberFontSizeChange}
+            />
+          </div>
+
           <div className="member-list">
             {config.teamMembers.map((member, idx) => (
               <div key={member.id} className="member-card">
@@ -683,10 +733,13 @@ export default function ControlPanel({ config, setConfig }) {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleMemberImageChange(member.id, e.target.files?.[0])}
+                      onChange={(e) => {
+                        handleMemberImageChange(member.id, e.target.files?.[0], member.shape)
+                        e.target.value = ''
+                      }}
                       style={{ display: 'none' }}
                     />
-                    Photo
+                    {member.image ? 'Change photo' : 'Photo'}
                   </label>
                 </div>
 
@@ -783,6 +836,15 @@ export default function ControlPanel({ config, setConfig }) {
           </div>
         </Accordion>
       </div>
+
+      {crop && (
+        <ImageCropper
+          src={crop.src}
+          shape={crop.shape}
+          onCancel={() => setCrop(null)}
+          onSave={handleCropSave}
+        />
+      )}
     </div>
   )
 }
