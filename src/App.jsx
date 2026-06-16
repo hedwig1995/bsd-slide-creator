@@ -3,6 +3,7 @@ import './App.css'
 import PosterPreview from './components/PosterPreview'
 import ControlPanel from './components/ControlPanel'
 import { exportPoster } from './exportPoster'
+import { exportPptx } from './exportPptx'
 
 export default function App() {
   const [config, setConfig] = useState({
@@ -41,6 +42,9 @@ export default function App() {
     ],
     techBarHeight: 130,
     techStackCount: 3,
+    techIconScale: 60,
+    techShowName: false,
+    techNameSize: 15,
     techStack: [
       { id: 1, image: null, name: 'Tech 1' },
       { id: 2, image: null, name: 'Tech 2' },
@@ -77,18 +81,26 @@ export default function App() {
 
   const posterClipRef = useRef(null)
   const [exporting, setExporting] = useState(false)
+  const [exportFormat, setExportFormat] = useState('png')
 
-  const exportImage = async (format) => {
+  const handleExport = async () => {
     const node = posterClipRef.current?.querySelector('.poster-canvas')
     if (!node || exporting) return
     setExporting(true)
     try {
-      const dataUrl = await exportPoster(node, scale, config, format)
-      const a = document.createElement('a')
-      const safeName = (config.teamName || 'slide').trim().replace(/\s+/g, '-').toLowerCase()
-      a.download = `${safeName || 'slide'}.${format}`
-      a.href = dataUrl
-      a.click()
+      const safeName =
+        (config.teamName || 'slide').trim().replace(/\s+/g, '-').toLowerCase() || 'slide'
+      if (exportFormat === 'pptx') {
+        // Render the poster to a high-quality PNG, then embed it full-bleed in a slide.
+        const dataUrl = await exportPoster(node, scale, config, 'png')
+        await exportPptx(dataUrl, safeName)
+      } else {
+        const dataUrl = await exportPoster(node, scale, config, exportFormat)
+        const a = document.createElement('a')
+        a.download = `${safeName}.${exportFormat}`
+        a.href = dataUrl
+        a.click()
+      }
     } finally {
       setExporting(false)
     }
@@ -103,22 +115,29 @@ export default function App() {
           <span className="toolbar-title">Live preview</span>
           <span className="toolbar-dim">1920 × 1080</span>
           <span className="toolbar-spacer"></span>
-          <button
-            className="btn export"
-            onClick={() => exportImage('png')}
-            disabled={exporting}
-            title="Export as PNG"
-          >
-            {exporting ? 'Exporting…' : 'Export PNG'}
-          </button>
-          <button
-            className="btn export"
-            onClick={() => exportImage('jpg')}
-            disabled={exporting}
-            title="Export as JPG"
-          >
-            Export JPG
-          </button>
+          <div className="export-group">
+            <span className="export-label">Export to</span>
+            <select
+              className="format-select"
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value)}
+              disabled={exporting}
+              title="Export format"
+            >
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="pptx">PPTX</option>
+            </select>
+            <span className="export-label">format</span>
+            <button
+              className="btn export"
+              onClick={handleExport}
+              disabled={exporting}
+              title={`Export as ${exportFormat.toUpperCase()}`}
+            >
+              {exporting ? 'Exporting…' : 'Export'}
+            </button>
+          </div>
           <span className="toolbar-divider"></span>
           <button
             className="btn ghost"

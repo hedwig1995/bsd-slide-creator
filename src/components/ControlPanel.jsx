@@ -14,6 +14,17 @@ const FONT_OPTIONS = [
   { value: "'Montserrat', sans-serif", label: 'Montserrat' },
   { value: "'Archivo', sans-serif", label: 'Archivo' },
   { value: "'Inter', sans-serif", label: 'Inter' },
+  { value: "'Astloch', system-ui", label: 'Astloch' },
+  { value: "'Audiowide', sans-serif", label: 'Audiowide' },
+  { value: "'Bitcount Grid Double', system-ui", label: 'Bitcount Grid Double' },
+  { value: "'Bitcount Single', system-ui", label: 'Bitcount Single' },
+  { value: "'Limelight', sans-serif", label: 'Limelight' },
+  { value: "'Metamorphous', serif", label: 'Metamorphous' },
+  { value: "'Noto Sans Mono', monospace", label: 'Noto Sans Mono' },
+  { value: "'Play', sans-serif", label: 'Play' },
+  { value: "'Roboto Flex', sans-serif", label: 'Roboto Flex' },
+  { value: "'Smooch Sans', sans-serif", label: 'Smooch Sans' },
+  { value: "'Stack Sans Notch', sans-serif", label: 'Stack Sans Notch' },
 ]
 
 const SECTION_DEFAULTS = {
@@ -63,6 +74,9 @@ const SECTION_DEFAULTS = {
   tech: {
     techBarHeight: 130,
     techStackCount: 3,
+    techIconScale: 60,
+    techShowName: false,
+    techNameSize: 15,
     techStack: [
       { id: 1, image: null, name: 'Tech 1' },
       { id: 2, image: null, name: 'Tech 2' },
@@ -200,6 +214,18 @@ export default function ControlPanel({ config, setConfig }) {
 
   const handleTechBarHeightChange = (e) => {
     setConfig(prev => ({ ...prev, techBarHeight: parseInt(e.target.value) }))
+  }
+
+  const handleTechIconScaleChange = (e) => {
+    setConfig(prev => ({ ...prev, techIconScale: parseInt(e.target.value) }))
+  }
+
+  const handleTechShowNameChange = (e) => {
+    setConfig(prev => ({ ...prev, techShowName: e.target.checked }))
+  }
+
+  const handleTechNameSizeChange = (e) => {
+    setConfig(prev => ({ ...prev, techNameSize: parseInt(e.target.value) }))
   }
 
   const handleTeamNameChange = (e) => {
@@ -794,6 +820,21 @@ export default function ControlPanel({ config, setConfig }) {
           </div>
 
           <div className="control-group">
+            <label>
+              Icon size: {config.techIconScale}% of bar (
+              {Math.round((config.techBarHeight * config.techIconScale) / 100)}px)
+            </label>
+            <input
+              type="range"
+              min="20"
+              max="90"
+              step="1"
+              value={config.techIconScale}
+              onChange={handleTechIconScaleChange}
+            />
+          </div>
+
+          <div className="control-group">
             <label>Number of technologies (1–10)</label>
             <select value={config.techStackCount} onChange={handleTechStackCountChange}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
@@ -803,6 +844,31 @@ export default function ControlPanel({ config, setConfig }) {
               ))}
             </select>
           </div>
+
+          <div className="control-group">
+            <label className="toggle-row">
+              <input
+                type="checkbox"
+                checked={config.techShowName}
+                onChange={handleTechShowNameChange}
+              />
+              <span>Show tech names</span>
+            </label>
+          </div>
+
+          {config.techShowName && (
+            <div className="control-group">
+              <label>Tech name size: {config.techNameSize}px</label>
+              <input
+                type="range"
+                min="8"
+                max="40"
+                step="1"
+                value={config.techNameSize}
+                onChange={handleTechNameSizeChange}
+              />
+            </div>
+          )}
 
           <div className="tech-stack-list">
             {config.techStack.map((tech, idx) => (
@@ -831,6 +897,15 @@ export default function ControlPanel({ config, setConfig }) {
                     {tech.image ? 'Change icon' : 'Upload icon'}
                   </label>
                 </div>
+
+                {config.techShowName && (
+                  <input
+                    type="text"
+                    placeholder="Tech name"
+                    value={tech.name}
+                    onChange={(e) => handleTechChange(tech.id, 'name', e.target.value)}
+                  />
+                )}
               </div>
             ))}
           </div>

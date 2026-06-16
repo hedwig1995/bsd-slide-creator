@@ -297,8 +297,12 @@ export default function PosterPreview({ config, scale = 1 }) {
         {/* Tech Stack Section */}
         {config.techStack.length > 0 && (() => {
           const n = config.techStack.length
-          // Scale icon down as the count grows so all items fit the bar
-          const iconSize = n <= 4 ? 80 : n <= 6 ? 72 : n <= 8 ? 64 : 56
+          // Icon size is anchored to the bar height (a % of it), so resizing the
+          // bar rescales the icons. Capped so it never exceeds the bar.
+          const iconScale = config.techIconScale ?? 60
+          const iconSize = Math.round(
+            Math.min(techBarHeight * 0.92, (techBarHeight * iconScale) / 100)
+          )
           const iconFont = Math.round(iconSize * 0.38)
           const itemPadding = n <= 5 ? 26 : n <= 7 ? 18 : 12
 
@@ -331,6 +335,17 @@ export default function PosterPreview({ config, scale = 1 }) {
                         </span>
                       )}
                     </div>
+                    {config.techShowName && tech.name && (
+                      <span
+                        className="tech-name"
+                        style={{
+                          fontSize: (config.techNameSize ?? 15) + 'px',
+                          fontFamily: memberFont,
+                        }}
+                      >
+                        {tech.name}
+                      </span>
+                    )}
                   </div>
                 </Fragment>
               ))}

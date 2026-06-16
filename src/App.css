@@ -407,6 +407,34 @@
   cursor: default;
 }
 
+.format-select {
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--txt);
+  font: 600 12px 'Inter';
+  cursor: pointer;
+}
+
+.format-select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.export-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.export-label {
+  color: var(--mut);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .toolbar-divider {
   width: 1px;
   height: 22px;
