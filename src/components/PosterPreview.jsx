@@ -22,11 +22,20 @@ export default function PosterPreview({ config, scale = 1 }) {
     return () => ro.disconnect()
   }, [])
 
+  // Centralised member-tile typography: one font + name size drives every tile.
+  const memberFont = config.memberFont || "'Inter', sans-serif"
+  const memberNameFont = config.memberFontSize ?? 16
+  const memberRoleFont = Math.round(memberNameFont * 0.78)
+
+  // The label sizes are fixed, so the layout must reserve room for them when
+  // sizing avatars — otherwise tall tiles overflow the area at high counts.
   const memberLayout = computeMemberLayout(
     config.teamMembers.length,
     area.w,
     area.h,
-    config.memberInPanel
+    config.memberInPanel,
+    memberNameFont,
+    memberRoleFont
   )
 
   // Fixed tile width so the flex grid wraps at exactly `cols` per row and the
@@ -38,11 +47,6 @@ export default function PosterPreview({ config, scale = 1 }) {
     18
   const memberRowW =
     memberLayout.cols * memberTileW + (memberLayout.cols - 1) * memberLayout.gap
-
-  // Centralised member-tile typography: one font + name size drives every tile.
-  const memberFont = config.memberFont || "'Inter', sans-serif"
-  const memberNameFont = config.memberFontSize ?? memberLayout.nameFont
-  const memberRoleFont = Math.round(memberNameFont * 0.78)
 
   const techBarHeight = config.techBarHeight ?? 130
 
@@ -357,16 +361,17 @@ export default function PosterPreview({ config, scale = 1 }) {
   )
 }
 
-// Pick the column count that yields the largest tiles fitting the area,
-// then derive avatar size, gaps and font sizes from it.
-function computeMemberLayout(count, w, h, inPanel) {
+// Use a fixed column pattern, then size avatars so the whole tile (avatar +
+// fixed-size name/role labels + any panel padding) fits inside its grid cell —
+// keeping all rows within the member area instead of overflowing into the
+// header / tech bar at high member counts.
+function computeMemberLayout(count, w, h, inPanel, nameFont = 16, roleFont = 13) {
   if (!count || w <= 0 || h <= 0) {
-    return { cols: 1, avatar: 200, gap: 30, initialsFont: 68, nameFont: 16, roleFont: 14, infoGap: 14, panelPad: 0 }
+    return { cols: 1, avatar: 200, gap: 30, initialsFont: 68, infoGap: 14, panelPad: 0 }
   }
   // Leave breathing room so tiles don't touch the poster edges
   const W = Math.max(0, w - 100)
   const H = Math.max(0, h - 36)
-  const heightFactor = inPanel ? 1.85 : 1.4 // tile height ≈ avatar * factor (label + padding)
   // Fixed column pattern driven by member count so rows stay balanced
   // regardless of how wide the screen is:
   //   1-5  -> 5×1   6-10 -> 5×2   11-15 -> 5×3   16-20 -> 10×2
@@ -376,20 +381,23 @@ function computeMemberLayout(count, w, h, inPanel) {
   const gap = Math.max(12, Math.min(30, W * 0.018))
   const cellW = (W - gap * (cols - 1)) / cols
   const cellH = (H - gap * (rows - 1)) / rows
-  const best = {
+
+  // Reserve vertical room for the label block (allow the name to wrap to two
+  // lines + the role line + the gap above it) so the avatar shrinks to fit.
+  const lineH = 1.18
+  const textBlock = nameFont * lineH * 2 + roleFont * lineH + nameFont * 0.5
+  // In panel mode the tile also has top+bottom padding ≈ 0.4 × avatar.
+  const padFactor = inPanel ? 1.4 : 1.0
+  const avatarFromH = (cellH - textBlock) / padFactor
+  const avatarRaw =
+    cellW > 0 && cellH > 0 ? Math.min(cellW * 0.92, avatarFromH) : 60
+  const avatar = Math.max(28, Math.min(avatarRaw, 210))
+  return {
     cols,
     gap,
-    avatar: cellW > 0 && cellH > 0 ? Math.min(cellW * 0.92, cellH / heightFactor) : 60,
-  }
-  const avatar = Math.max(34, Math.min(best.avatar, 210))
-  return {
-    cols: best.cols,
-    gap: best.gap,
     avatar,
     initialsFont: Math.round(avatar * 0.34),
-    nameFont: Math.max(11, Math.round(avatar * 0.09)),
-    roleFont: Math.max(9, Math.round(avatar * 0.075)),
-    infoGap: Math.max(6, Math.round(avatar * 0.07)),
+    infoGap: Math.max(4, Math.round(avatar * 0.07)),
     panelPad: inPanel ? Math.round(avatar * 0.2) : 0,
   }
 }
